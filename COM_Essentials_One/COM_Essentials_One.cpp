@@ -27,20 +27,24 @@ inline void HR(HRESULT const hr)
 int main()
 {
 	// Example 1
-	IHen* hen = CreateHen();
+	IHen* hen;
+
+	if (S_OK != CreateHen(&hen))
+	{
+		return 0;
+	}
+
 	hen->Cluck();
 
-	IHen2* hen2 = static_cast<IHen2*>(hen->As("IHen2"));
-
-	if (hen2)
+	IHen2* hen2;
+	if (S_OK == hen->QueryInterface(__uuidof(IHen2), reinterpret_cast<void**>(&hen2)))
 	{
 		hen2->Forage();
 		hen2->Release();
 	}
 
-	IOfflineChicken* offlineChicken = static_cast<IOfflineChicken*>(hen->As("IOfflineChicken"));
-
-	if (offlineChicken)
+	IOfflineChicken* offlineChicken;
+	if (S_OK == hen->QueryInterface(__uuidof(IOfflineChicken), reinterpret_cast<void**>(&offlineChicken)))
 	{
 		offlineChicken->Load("filename");
 		offlineChicken->Save("filename");

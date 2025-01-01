@@ -8,4 +8,8 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\COM_Essentials_One_DLL\COM_Essentials_One_DLL.vcxproj" />
+  </ItemGroup>
+
 </Project>

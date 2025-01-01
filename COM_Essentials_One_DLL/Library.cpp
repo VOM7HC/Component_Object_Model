@@ -1,12 +1,14 @@
 #include "Library.hpp"
 #include <Windows.h>
 #include <cstdint>
+#include <crtdbg.h>
 
+#define ASSERT _ASSERTE
 #define TRACE(s) OutputDebugString(s)
 
 struct Hen : IHen2, IOfflineChicken
 {
-	uint32_t m_count;
+	long m_count;
 
 	Hen() : m_count(0)
 	{
@@ -17,37 +19,42 @@ struct Hen : IHen2, IOfflineChicken
 		TRACE(L"Chicken soup!\n");
 	}
 
-	// IObject
-	void _stdcall AddRef()
+	// IUnknown
+	ULONG _stdcall AddRef()
 	{
-		++m_count;
+		return _InterlockedIncrement(&m_count);
 	}
-	void _stdcall Release()
+    ULONG _stdcall Release()
+    {
+        ULONG const result = _InterlockedDecrement(&m_count);
+        if (0 == result)
+        {
+            delete this;
+        }
+        return result;
+    }
+	HRESULT __stdcall QueryInterface(IID const& id, void** result)
 	{
-		if (--m_count == 0)
+		ASSERT(result);
+
+		if (id == __uuidof(IHen) ||
+			id == __uuidof(IHen2) ||
+			id == __uuidof(IUnknown))
 		{
-			delete this;
+			*result = static_cast<IHen2*>(this);
 		}
-	}
-	void* __stdcall As(char const* type)
-	{
-		if (0 == strcmp(type, "IHen") ||
-			0 == strcmp(type, "IHen2") ||
-			0 == strcmp(type, "IObject"))
+		else if (id == __uuidof(IOfflineChicken))
 		{
-			AddRef();
-			return static_cast<IHen2*>(this);
-		}
-		else if (0 == strcmp(type, "IOfflineChicken"))
-		{
-			AddRef();
-			return static_cast<IOfflineChicken*>(this);
+			*result = static_cast<IOfflineChicken*>(this);
 		}
 		else
 		{
-			return 0;
+			*result = nullptr;
+			return E_NOINTERFACE;
 		}
-		return nullptr;
+
+		static_cast<IUnknown*>(*result)->AddRef();
+		return S_OK;
 	}
 
 	// IHen
@@ -77,9 +84,17 @@ struct Hen : IHen2, IOfflineChicken
 	}
 };
 
-IHen* __stdcall CreateHen()
+HRESULT __stdcall CreateHen(IHen** result)
 {
-	IHen* hen = new Hen;
-	hen->AddRef();
-	return hen;
+	ASSERT(result);
+
+	*result = new (std::nothrow) Hen();
+	
+	if (0 == *result)
+	{
+		return E_OUTOFMEMORY;
+	}
+	(*result)->AddRef();
+
+	return S_OK;
 }
