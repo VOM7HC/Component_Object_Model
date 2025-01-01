@@ -14,8 +14,8 @@ template<typename T>
 class RemoveAddRefRelease : public T
 {
 public:
-	ULONG _stdcall AddRef() { return 1; }
-	ULONG _stdcall Release() { return 1; }
+	ULONG _stdcall AddRef();
+	ULONG _stdcall Release();
 };
 
 template<typename T>
